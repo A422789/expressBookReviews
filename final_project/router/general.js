@@ -103,22 +103,39 @@ public_users.get('/author/:author', async function (req, res) {
     return res.status(500).json({ message: "Error fetching books by author" });
   }
 });
-// Get all books based on title
-public_users.get('/title/:title', function (req, res) {
+// Task 13: Get book details based on Title using Async-Await with Axios
+public_users.get('/title/:title', async function (req, res) {
   const title = req.params.title;
-  const bookKeys = Object.keys(books);
-  const matchingBooks = [];
 
-  bookKeys.forEach((key) => {
-    if (books[key].title === title) {
-      matchingBooks.push({ isbn: key, ...books[key] });
+  try {
+    // 1. استخدام Axios لجلب كل الكتب من الـ Endpoint الأساسية
+    const response = await axios.get('http://localhost:5000/');
+    const allBooks = response.data;
+    
+    // 2. البحث عن الكتب التي تطابق العنوان المطللوب
+    const bookKeys = Object.keys(allBooks);
+    const matchingBooks = [];
+
+    bookKeys.forEach((key) => {
+      if (allBooks[key].title.toLowerCase() === title.toLowerCase()) {
+        matchingBooks.push({ isbn: key, ...allBooks[key] });
+      }
+    });
+
+    // 3. إرسال النتائج
+    if (matchingBooks.length > 0) {
+      return res.status(200).send(JSON.stringify(matchingBooks, null, 4));
+    } else {
+      return res.status(404).json({ message: "No books found with this title" });
     }
-  });
 
-  if (matchingBooks.length > 0) {
-    return res.status(200).send(JSON.stringify(matchingBooks, null, 4));
-  } else {
-    return res.status(404).json({ message: "No books found with this title" });
+  } catch (error) {
+    // احتياط في حال فشل الطلب عبر Axios
+    const matchingBooks = Object.values(books).filter(b => b.title.toLowerCase() === title.toLowerCase());
+    if (matchingBooks.length > 0) {
+        return res.status(200).send(JSON.stringify(matchingBooks, null, 4));
+    }
+    return res.status(500).json({ message: "Error fetching books by title" });
   }
 });
 // Get book review
