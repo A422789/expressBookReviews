@@ -24,24 +24,48 @@ public_users.post("/register", (req, res) => {
   return res.status(200).json({ message: "User registered successfully. Now you can login" });
 });
 
-// Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  res.status(200).send(JSON.stringify(books));
+const axios = require('axios');
+
+// Task 10: Get the list of books available in the shop using Async-Await
+public_users.get('/', async function (req, res) {
+    try {
+        
+        const fetchBooks = async () => {
+            return books;
+        };
+
+        const allBooks = await fetchBooks();
+        
+        return res.status(200).send(JSON.stringify(allBooks, null, 4));
+
+    } catch (error) {
+        return res.status(500).json({ message: "Error fetching books" });
+    }
 });
+const axios = require('axios');
 
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn', function (req, res) {
-  const isbn = req.params.isbn;
-  
+// Task 11: Get book details based on ISBN using Axios to request our own "/" endpoint
+public_users.get('/isbn/:isbn', async function (req, res) {
+    const isbn = req.params.isbn;
 
-  const book = books[isbn]; 
+    try {
+        // نستخدم axios لطلب الـ endpoint الأساسية اللي بترجع كل الكتب
+        // هيك بنطبق الـ Async/Await مع Axios بشكل حقيقي
+        const response = await axios.get('http://localhost:5000/');
+        const allBooks = response.data;
 
-  if (book) {
+        // البحث عن الكتاب المطلوب بناءً على الـ ISBN من البيانات المستلمة
+        const book = allBooks[isbn];
 
-    return res.status(200).send(JSON.stringify(book, null, 4));
-  } else {
-    return res.status(404).json({message: "Book not found"});
-  }
+        if (book) {
+            return res.status(200).send(JSON.stringify(book, null, 4));
+        } else {
+            return res.status(404).json({ message: "Book not found" });
+        }
+    } catch (error) {
+        // في حال فشل طلب الأكسيوس (مثلاً السيرفر غير مستجيب)
+        return res.status(500).json({ message: "Error fetching books data via Axios" });
+    }
 });
   
 // Get book details based on author
