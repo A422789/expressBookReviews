@@ -68,26 +68,39 @@ public_users.get('/isbn/:isbn', async function (req, res) {
     }
 });
   
-// Get book details based on author
-public_users.get('/author/:author', function (req, res) {
+// Task 12: Get book details based on Author using Async-Await with Axios
+public_users.get('/author/:author', async function (req, res) {
   const author = req.params.author;
-  
-  // 1. الحصول على جميع مفاتيح الكتب (1, 2, 3...)
-  const bookKeys = Object.keys(books);
-  const matchingBooks = [];
 
-  // 2. المرور على كل كتاب والتحقق من اسم المؤلف
-  bookKeys.forEach((key) => {
-    if (books[key].author === author) {
-      matchingBooks.push({ isbn: key, ...books[key] });
+  try {
+    // 1. نطلب كل الكتب من الـ Endpoint الأساسية باستخدام Axios
+    const response = await axios.get('http://localhost:5000/');
+    const allBooks = response.data;
+    
+    // 2. تحويل الكائن إلى مصفوفة والبحث عن الكتب التي تطابق اسم المؤلف
+    const bookKeys = Object.keys(allBooks);
+    const matchingBooks = [];
+
+    bookKeys.forEach((key) => {
+      if (allBooks[key].author === author) {
+        matchingBooks.push({ isbn: key, ...allBooks[key] });
+      }
+    });
+
+    // 3. إرجاع النتائج أو رسالة خطأ إذا لم يوجد المؤلف
+    if (matchingBooks.length > 0) {
+      return res.status(200).send(JSON.stringify(matchingBooks, null, 4));
+    } else {
+      return res.status(404).json({ message: "No books found by this author" });
     }
-  });
 
-  // 3. التحقق من وجود نتائج
-  if (matchingBooks.length > 0) {
-    return res.status(200).send(JSON.stringify(matchingBooks, null, 4));
-  } else {
-    return res.status(404).json({ message: "No books found by this author" });
+  } catch (error) {
+    // في حال فشل Axios (مثلاً السيرفر غير مستجيب)، نستخدم البيانات المحلية كاحتياط
+    const matchingBooks = Object.values(books).filter(b => b.author === author);
+    if (matchingBooks.length > 0) {
+        return res.status(200).send(JSON.stringify(matchingBooks, null, 4));
+    }
+    return res.status(500).json({ message: "Error fetching books by author" });
   }
 });
 // Get all books based on title
